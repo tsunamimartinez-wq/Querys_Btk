@@ -289,8 +289,8 @@ def ejecutar_queries(periodo, extractor, paths, fecha_funcs):
     fecha_inicio, fecha_fin = fecha_funcs[periodo]()
 
     carpeta_queries = Path(paths[periodo])
-    print("Directorio actual:", Path.cwd())
-    print("Ruta buscada:", carpeta_queries.resolve())
+    # print("Directorio actual:", Path.cwd())
+    # print("Ruta buscada:", carpeta_queries.resolve())
 
     print(f"Buscando consultas en: {carpeta_queries}")
 
@@ -302,13 +302,13 @@ def ejecutar_queries(periodo, extractor, paths, fecha_funcs):
 
     output_dir = Path("consultas") / periodo
 
-    if not output_dir.exist():
+    if not output_dir.exists():
         output_dir.mkdir(parents=True, exist_ok=True)
         print(f"Carpeta creada: {output_dir}")
     else:
-        print(f"Carpeta existente:{output_dir}")
+        print(f"Carpeta existente: {output_dir}")
 
-    print(f"Carpeta de salida: {output_dir}")
+    # print(f"Carpeta de salida: {output_dir}")
 
     for archivo in archivos_sql:
         print("\n--------------------------------")
@@ -319,10 +319,17 @@ def ejecutar_queries(periodo, extractor, paths, fecha_funcs):
             query = f.read()
       
         query = query.replace("{fecha_inicio}", fecha_inicio)
-        query = query.replace("{fecha_fin}", fecha_fin)
+
+        if "{fecha_fin}" in query:
+            query = query.replace("{fecha_fin}", fecha_fin)
 
         print(f"Ejecutando consulta...")
         data = extractor.run_sql(query)
+
+        if data is None:
+            print(f"Error al ejecutar {archivo.name}")
+            continue
+
         print(f"Registros obtenidos: {len(data):,}")
 
         output_path = output_dir / f"{archivo.stem}_{mes_actual}.csv"
