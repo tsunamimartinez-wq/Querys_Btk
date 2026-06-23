@@ -1,0 +1,13 @@
+# Archivos CSV generados
+consultas/
+
+# Todos los csv del proyecto
+*.csv
+
+# Configuraciones JSON
+config/db_config.json
+
+# Cache de Python
+__pycache__/
+*.pyc
+
