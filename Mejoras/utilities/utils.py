@@ -319,9 +319,11 @@ def ejecutar_queries(periodo, extractor, paths, fecha_funcs):
             query = f.read()
       
         query = query.replace("{fecha_inicio}", fecha_inicio)
+        print(f"Fecha inicio: {fecha_inicio}")
 
         if "{fecha_fin}" in query:
             query = query.replace("{fecha_fin}", fecha_fin)
+            print(f"Fecha fin: {fecha_fin}")
 
         print(f"Ejecutando consulta...")
         data = extractor.run_sql(query)
