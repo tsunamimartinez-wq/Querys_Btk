@@ -300,7 +300,14 @@ def ejecutar_queries(periodo, extractor, paths, fecha_funcs):
 
     mes_actual = datetime.now().strftime("%Y-%m")
 
-    output_dir = Path("consultas") / periodo
+    if periodo == "premensual":
+        nombre_fecha = datetime.strptime(
+        fecha_inicio, "%Y-%m-%d %H:%M:%S"
+        ).strftime("%Y-%m")
+    else:
+        nombre_fecha = mes_actual
+
+    output_dir = Path("resultados") / periodo
 
     if not output_dir.exists():
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -334,7 +341,7 @@ def ejecutar_queries(periodo, extractor, paths, fecha_funcs):
 
         print(f"Registros obtenidos: {len(data):,}")
 
-        output_path = output_dir / f"{archivo.stem}_{mes_actual}.csv"
+        output_path = output_dir / f"{archivo.stem}_{nombre_fecha}.csv"
         data.to_csv(output_path, index=False)
 
         print(f"CSV generado: {output_path}")
