@@ -191,7 +191,7 @@ def obtener_quincena_anterior(fecha =None):
     if fecha.day < 16:
         # estamos en la primera quincena
         fecha_inicio = (
-            fecha.replace(day=1, hour=0, second=0, microsecond=0)
+            fecha.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
             - relativedelta(months=1)
         ).replace(day=16)
 
@@ -298,14 +298,14 @@ def ejecutar_queries(periodo, extractor, paths, fecha_funcs):
     
     print(f"Consultas encontradas: {len(archivos_sql)}")
 
-    mes_actual = datetime.now().strftime("%Y-%m")
+    mes_anterior = (datetime.now() - relativedelta(months=1)).strftime("%Y-%m")
 
     if periodo == "premensual":
         nombre_fecha = datetime.strptime(
         fecha_inicio, "%Y-%m-%d %H:%M:%S"
         ).strftime("%Y-%m")
     else:
-        nombre_fecha = mes_actual
+        nombre_fecha = mes_anterior
 
     output_dir = Path("resultados") / periodo
 
@@ -339,6 +339,10 @@ def ejecutar_queries(periodo, extractor, paths, fecha_funcs):
             print(f"Error al ejecutar {archivo.name}")
             continue
 
+        if archivo.stem == "tarjetas_mi_reporte_uso":
+            print("Aplicando transformación para tarjetas mi reporte uso...")
+            data = transformar_public_data_web(data)
+
         print(f"Registros obtenidos: {len(data):,}")
 
         output_path = output_dir / f"{archivo.stem}_{nombre_fecha}.csv"
@@ -347,3 +351,70 @@ def ejecutar_queries(periodo, extractor, paths, fecha_funcs):
         print(f"CSV generado: {output_path}")
 
     return True
+
+
+def transformar_public_data_web(df):
+    """
+    Transforma el resultado de la consulta public_data_web
+    generando un registro para el retiro y otro para el arribo
+    de cada viaje.
+
+    Parámetros
+    ----------
+    df : pandas.DataFrame
+        Resultado de la consulta SQL.
+
+    Retorna
+    -------
+    pandas.DataFrame
+        DataFrame transformado.
+    """
+
+    salida = df[[
+        "VIAJE_ID",
+        "ACCESO",
+        "customer",
+        "membresia_tipo",
+        "NUMERO_SERIE_HEX",
+        "FECHA_HORA_TRANSACCION_SALIDA",
+        "Ciclo_EstacionOrigen"
+    ]].copy()
+
+    salida = salida.rename(columns={
+        "VIAJE_ID": "ID_TRANSACCION_ORGANISMO",
+        "membresia_tipo": "TIPO_MEMBRESIA",
+        "FECHA_HORA_TRANSACCION_SALIDA": "FECHA_HORA_TRANSACCION",
+        "Ciclo_EstacionOrigen": "LOCATION_ID"
+    })
+
+    salida["PROVIDER"] = 96
+    salida["TIPO_TRANSACCION"] = 70
+
+    arribo = df[[
+        "VIAJE_ID",
+        "ACCESO",
+        "customer",
+        "membresia_tipo",
+        "NUMERO_SERIE_HEX",
+        "Fecha_Arribo",
+        "Ciclo_EstacionArribo"
+    ]].copy()
+
+    arribo = arribo.rename(columns={
+        "VIAJE_ID": "ID_TRANSACCION_ORGANISMO",
+        "membresia_tipo": "TIPO_MEMBRESIA",
+        "Fecha_Arribo": "FECHA_HORA_TRANSACCION",
+        "Ciclo_EstacionArribo": "LOCATION_ID"
+    })
+
+    arribo["PROVIDER"] = 96
+    arribo["TIPO_TRANSACCION"] = 71
+
+    df_final = pd.concat([salida, arribo], ignore_index=True)
+
+    df_final = df_final.sort_values(
+        ["ID_TRANSACCION_ORGANISMO", "TIPO_TRANSACCION"],
+        ignore_index=True
+    )
+
+    return df_final

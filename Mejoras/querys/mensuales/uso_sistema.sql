@@ -18,7 +18,7 @@ SELECT
        WHEN member_gender = 'O' THEN 'Otro' 
        ELSE NULL
        END AS Género,
-  FLOOR((UNIX_TIMESTAMP(CONVERT_TZ(@inicio_mes + INTERVAL 1 MONTH, 'America/Costa_Rica', 'UTC')) - member_birthday/1000) / (365*24*3600)) AS Edad
+  FLOOR((UNIX_TIMESTAMP(CONVERT_TZ('{fecha_inicio}' + INTERVAL 1 MONTH, 'America/Costa_Rica', 'UTC')) - member_birthday/1000) / (365243600)) AS Edad
 
 FROM BikeRentalFact AS v
   LEFT JOIN BikeDim AS b
@@ -28,10 +28,10 @@ FROM BikeRentalFact AS v
   LEFT JOIN BikeStationDim AS es
     ON v.endStation_id = es.id
 
-		 
+         
 WHERE v.endTimeMs >= UNIX_TIMESTAMP( CONVERT_TZ('{fecha_inicio}', 'America/Costa_Rica', 'UTC') ) * 1000
   AND v.endTimeMs < UNIX_TIMESTAMP( CONVERT_TZ('{fecha_fin}', 'America/Costa_Rica', 'UTC') ) * 1000 
-			 
-		 
+             
+         
  AND (totalDurationMs >= 120*1000
       OR startStation_id != endStation_id)
